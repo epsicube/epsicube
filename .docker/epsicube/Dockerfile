@@ -67,6 +67,16 @@ RUN mkdir -p $XDG_CONFIG_HOME $XDG_DATA_HOME $XDG_CACHE_HOME && \
 ENV HOST="0.0.0.0"
 ENV SERVER_NAME=":80"
 ENV SERVER_ROOT="/app/public"
+RUN echo '#!/bin/bash\n\
+if [ -f "artisan" ]; then\n\
+    php artisan epsicube:work &\n\
+fi\n\
+exec "$@"' > /usr/local/bin/docker-entrypoint.sh && \
+    chmod +x /usr/local/bin/docker-entrypoint.sh
 
 USER nonroot
 WORKDIR /app
+
+ENTRYPOINT ["docker-entrypoint.sh"]
+
+CMD ["frankenphp", "run", "--config", "/etc/caddy/Caddyfile"]

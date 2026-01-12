@@ -1,5 +1,5 @@
 services:
-  dev:
+  epsicube:
     build:
       context: .docker/epsicube
       args:
@@ -8,7 +8,7 @@ services:
         PHP_EXTENSIONS: '${PHP_EXTENSIONS:-bcmath curl intl mbstring opcache pcntl pdo_sqlite pdo_pgsql pgsql readline sockets xml zip}'
     init: true # <- or install tini (schedule:run specific)
     ports:
-      - "8011:80"
+      - "80:80"
       - "443:443"
       - "443:443/udp"
     environment:
@@ -35,8 +35,10 @@ services:
       - epsicube
     healthcheck:
       test: [ "CMD", "pg_isready", "-q", "-d", "${DB_DATABASE:-epsicube}", "-U", "${DB_USERNAME:-postgres}" ]
-      retries: 3
+      interval: 2s
       timeout: 5s
+      retries: 10
+      start_period: 2s
 
   # DEV
   mailpit:
