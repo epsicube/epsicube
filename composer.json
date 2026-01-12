@@ -1,17 +1,16 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "laravel/laravel",
+    "name": "epsicube/epsicube",
     "type": "project",
-    "description": "The skeleton application for the Laravel framework.",
+    "description": "The skeleton application for the Epsicube framework.",
     "keywords": [
-        "laravel",
+        "epsicube",
         "framework"
     ],
     "license": "MIT",
     "require": {
         "php": "^8.2",
         "epsicube/framework": "*",
-        "laravel/framework": "^12.0",
         "laravel/tinker": "^2.10.1"
     },
     "require-dev": {
