@@ -236,7 +236,7 @@
         <a href="https://epsicube.dev" class="header-link">Docs</a>
         <a href="https://github.com/epsicube/epsicube" class="header-link">GitHub</a>
         @if(\Epsicube\Support\Facades\Modules::isEnabled('core::administration'))
-            <a href="{{route('filament.epsicube-administration.home')}}" class="btn-admin">Administration</a>
+            <a href="{{\Filament\Facades\Filament::getPanel('epsicube-administration')->getUrl()}}" class="btn-admin">Administration</a>
         @endif
     </div>
 </header>
@@ -255,7 +255,7 @@
 
     <div class="grid">
         @if(\Epsicube\Support\Facades\Modules::isEnabled('core::administration'))
-            <a href="{{route('filament.epsicube-administration.home')}}" class="card full admin-card">
+            <a href="{{\Filament\Facades\Filament::getPanel('epsicube-administration')->getUrl()}}" class="card full admin-card">
                 <div class="icon-box" style="color: var(--accent-orange);">
                     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M21 9H3"/><path d="M9 21V9"/></svg>
                 </div>
