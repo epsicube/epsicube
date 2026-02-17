@@ -17,6 +17,7 @@ services:
       DB_DATABASE: ${DB_DATABASE:-epsicube}
       DB_USERNAME: ${DB_USERNAME:-postgres}
       DB_PASSWORD: ${DB_PASSWORD:-secret}
+      SERVER_NAME: ${SERVER_NAME:-:80}
     volumes:
       - './:/app'
     networks:
