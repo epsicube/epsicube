@@ -28,7 +28,7 @@ VOLUME ["/var/lib/pgbackrest", "/spool/pgbackrest"]
 
 # Default backup schedules
 ENV BACKUP_FULL_CRON="0 3 * * *"
-ENV BACKUP_INCR_CRON="30 0-2,4-23 * * *"
+ENV BACKUP_INCR_CRON="*/30 * * * *"
 
 USER postgres
 ENTRYPOINT ["entrypoint-wrapper.sh"]
