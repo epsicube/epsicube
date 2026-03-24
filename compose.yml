@@ -48,9 +48,14 @@ services:
       POSTGRES_USER: '${DB_USERNAME:-postgres}'
       POSTGRES_PASSWORD: '${DB_PASSWORD:-secret}'
 
-      BACKUP_ENABLED: '${BACKUP_ENABLED:-true}'
-      BACKUP_FULL_CRON: '${BACKUP_FULL_CRON:-0 3 * * *}'
-      BACKUP_INCR_CRON: '${BACKUP_INCR_CRON:-30 0-2,4-23 * * *}'
+      BACKUP_ENABLED: '${BACKUP_ENABLED:-false}'
+      BACKUP_FULL_CRON: '${BACKUP_FULL_CRON:-0 3 * * 0}'
+      BACKUP_DIFF_CRON: '${BACKUP_DIFF_CRON:-0 3 * * 1-6}'
+      BACKUP_INCR_CRON: '${BACKUP_INCR_CRON:-0 0-2,4-23 * * *}'
+      BACKUP_FULL_RETENTION: '${BACKUP_FULL_RETENTION:-52}'
+      BACKUP_DIFF_RETENTION: '${BACKUP_DIFF_RETENTION:-31}'
+      BACKUP_ARCHIVE_RETENTION: '${BACKUP_ARCHIVE_RETENTION:-31}'
+
     volumes:
       - 'pgsql:/var/lib/postgresql/data'
       - 'backups:/var/lib/pgbackrest'
