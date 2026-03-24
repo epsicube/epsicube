@@ -27,8 +27,14 @@ RUN chmod +x /usr/local/bin/entrypoint-wrapper.sh
 VOLUME ["/var/lib/pgbackrest", "/spool/pgbackrest"]
 
 # Default backup schedules
-ENV BACKUP_FULL_CRON="0 3 * * *"
-ENV BACKUP_INCR_CRON="*/30 * * * *"
+ENV BACKUP_ENABLED=false
+ENV BACKUP_FULL_CRON="0 3 * * 0"
+ENV BACKUP_DIFF_CRON="0 3 * * 1-6"
+ENV BACKUP_INCR_CRON="0 0-2,4-23 * * *"
+ENV BACKUP_FULL_RETENTION=52
+ENV BACKUP_DIFF_RETENTION=31
+ENV BACKUP_ARCHIVE_RETENTION=31
+
 
 USER postgres
 ENTRYPOINT ["entrypoint-wrapper.sh"]
