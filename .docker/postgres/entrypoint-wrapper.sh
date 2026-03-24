@@ -13,15 +13,13 @@ import_system_cron() {
         echo "System: Importing existing /etc/crontab"
         cp /etc/crontab "$CRON_TMP"
     else
-        echo "System: No existing /etc/crontab found, creating empty task list"
+        echo "System: No /etc/crontab found, creating empty task list"
         touch "$CRON_TMP"
     fi
 }
 
 handle_pgbackrest_conf() {
     local PGBACKREST_CONFIG="/etc/pgbackrest/pgbackrest.conf"
-
-    # Ensure the configuration directory exists
     mkdir -p /etc/pgbackrest
 
     if [ -f "$CUSTOM_CONFIG" ]; then
@@ -58,43 +56,27 @@ initialize_pgbackrest_async() {
     (
         echo "Init: Waiting for PostgreSQL to be ready..."
         until pg_isready -q; do sleep 2; done
-        echo "Init: PostgreSQL is ready for commands"
+        echo "Init: PostgreSQL is ready"
 
-        # Stanza initialization
         if ! pgbackrest info | grep -q "status: ok"; then
-            echo "Init: Stanza 'main' is missing or broken. Running stanza-create..."
+            echo "Init: Running stanza-create..."
             pgbackrest --stanza=main stanza-create
         else
-            echo "Init: Stanza 'main' already exists and is OK"
+            echo "Init: Stanza 'main' is OK"
         fi
 
-        # Bootstrap full backup
         if ! pgbackrest --stanza=main info | grep -q "full"; then
-            echo "Init: No full backup found in repository. Starting bootstrap..."
+            echo "Init: Starting bootstrap backup..."
             pgbackrest --stanza=main --type=full backup
-            echo "Init: Bootstrap backup finished successfully"
         else
-            echo "Init: Repository already contains a full backup. Skipping bootstrap"
+            echo "Init: Existing backup found"
         fi
-
-        echo "Init: pgBackRest setup is complete"
     ) &
 }
 
 schedule_backups() {
-    if [ -n "${BACKUP_FULL_CRON:-}" ]; then
-        echo "Cron: Adding FULL backup schedule -> ${BACKUP_FULL_CRON}"
-        echo "${BACKUP_FULL_CRON} pgbackrest --stanza=main --type=full backup" >> "$CRON_TMP"
-    else
-        echo "Cron: Variable BACKUP_FULL_CRON is empty, skipping"
-    fi
-
-    if [ -n "${BACKUP_INCR_CRON:-}" ]; then
-        echo "Cron: Adding INCR backup schedule -> ${BACKUP_INCR_CRON}"
-        echo "${BACKUP_INCR_CRON} pgbackrest --stanza=main --type=incr backup" >> "$CRON_TMP"
-    else
-        echo "Cron: Variable BACKUP_INCR_CRON is empty, skipping"
-    fi
+    [ -n "${BACKUP_FULL_CRON:-}" ] && echo "${BACKUP_FULL_CRON} pgbackrest --stanza=main --type=full backup" >> "$CRON_TMP"
+    [ -n "${BACKUP_INCR_CRON:-}" ] && echo "${BACKUP_INCR_CRON} pgbackrest --stanza=main --type=incr backup" >> "$CRON_TMP"
 }
 
 # --- Main Flow ---
@@ -102,25 +84,33 @@ schedule_backups() {
 import_system_cron
 
 if [ "${BACKUP_ENABLED:-false}" = "true" ]; then
-    echo "--- Backup system activation sequence started ---"
-
     handle_pgbackrest_conf
-    initialize_pgbackrest_async
-    schedule_backups
 
-    echo "Postgres: Adding backup runtime arguments (-c)"
-    set -- "$@" \
-        -c wal_level=replica \
-        -c archive_mode=on \
-        -c "archive_command=pgbackrest --stanza=main archive-push %p" \
-        -c max_wal_senders=2 \
-        -c archive_timeout=600s
+    # Logic only for Postgres Server mode
+    if [ "$1" = "postgres" ]; then
+        echo "--- Mode: PostgreSQL Server with Backup ---"
+        initialize_pgbackrest_async
+        schedule_backups
+        supercronic "$CRON_TMP" &
+
+        echo "Postgres: Injecting backup runtime arguments"
+        set -- "$@" \
+            -c wal_level=replica \
+            -c archive_mode=on \
+            -c "archive_command=pgbackrest --stanza=main archive-push %p" \
+            -c max_wal_senders=2 \
+            -c archive_timeout=600s
+    else
+        echo "--- Mode: Maintenance / Custom Command ($1) ---"
+    fi
 else
-    echo "--- Backup system remains disabled (BACKUP_ENABLED is not true) ---"
+    echo "--- Backup system disabled ---"
 fi
 
-echo "System: Launching Supercronic scheduler"
-supercronic "$CRON_TMP" &
-
-echo "System: Executing PostgreSQL entrypoint script"
-exec /usr/local/bin/docker-entrypoint.sh "$@"
+# Handover
+if [ "$1" = "postgres" ]; then
+    exec /usr/local/bin/docker-entrypoint.sh "$@"
+else
+    # Direct execution for restore, bash, or pgbackrest commands
+    exec "$@"
+fi
