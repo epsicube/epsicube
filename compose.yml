@@ -39,15 +39,21 @@ services:
     init: true
 
   pgsql:
-    image: "postgres:18.1-alpine3.23"
+    build:
+      context: .docker/postgres
     restart: unless-stopped
     environment:
       PGPASSWORD: '${DB_PASSWORD:-secret}'
       POSTGRES_DB: '${DB_DATABASE:-epsicube}'
       POSTGRES_USER: '${DB_USERNAME:-postgres}'
       POSTGRES_PASSWORD: '${DB_PASSWORD:-secret}'
+
+      BACKUP_ENABLED: '${BACKUP_ENABLED:-true}'
+      BACKUP_FULL_CRON: '${BACKUP_FULL_CRON:-0 3 * * *}'
+      BACKUP_INCR_CRON: '${BACKUP_INCR_CRON:-30 0-2,4-23 * * *}'
     volumes:
       - 'pgsql:/var/lib/postgresql/data'
+      - 'backups:/var/lib/pgbackrest'
     networks:
       - epsicube
     healthcheck:
@@ -87,6 +93,7 @@ services:
       - epsicube
 volumes:
   pgsql:
+  backups:
   pgadmin:
 
 networks:
