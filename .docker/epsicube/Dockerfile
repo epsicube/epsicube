@@ -24,7 +24,7 @@ RUN apt-get update && \
 ARG NODE_VERSION=22
 RUN curl -fsSL https://deb.nodesource.com/setup_$NODE_VERSION.x | bash - \
     && apt-get install -y nodejs \
-    && npm install -g npm \
+    && npm install -g npm@11.11.0 \
     && npm install -g pnpm@latest-10 \
     && npm install -g yarn \
     && npx playwright install-deps \
