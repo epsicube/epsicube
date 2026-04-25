@@ -16,7 +16,7 @@ x-epsicube-build: &epsicube-build
   args:
     DOCKER_GID: '${DOCKER_GID:-999}'
     DOCKER_UID: '${DOCKER_UID:-999}'
-    PHP_EXTENSIONS: '${PHP_EXTENSIONS:-bcmath curl intl mbstring opcache pcntl pdo_sqlite pdo_pgsql pgsql readline sockets xml zip}'
+    PHP_EXTENSIONS: '${PHP_EXTENSIONS:-bcmath curl intl mailparse mbstring opcache pcntl pdo_sqlite pdo_pgsql pgsql readline sockets xml zip}'
 
 services:
   web:
@@ -55,7 +55,6 @@ services:
       BACKUP_FULL_RETENTION: '${BACKUP_FULL_RETENTION:-52}'
       BACKUP_DIFF_RETENTION: '${BACKUP_DIFF_RETENTION:-31}'
       BACKUP_ARCHIVE_RETENTION: '${BACKUP_ARCHIVE_RETENTION:-31}'
-
     volumes:
       - 'pgsql:/var/lib/postgresql/data'
       - 'backups:/var/lib/pgbackrest'

@@ -10,7 +10,7 @@ RUN echo "Acquire::http::Pipeline-Depth 0;" > /etc/apt/apt.conf.d/99custom && \
     echo "Acquire::BrokenProxy    true;" >> /etc/apt/apt.conf.d/99custom
 
 # add additional extensions here:
-ARG PHP_EXTENSIONS="bcmath curl intl mbstring opcache pcntl pdo_sqlite pdo_pgsql pgsql readline sockets xml zip"
+ARG PHP_EXTENSIONS="bcmath curl intl mailparse mbstring opcache pcntl pdo_sqlite pdo_pgsql pgsql readline sockets xml zip"
 RUN install-php-extensions ${PHP_EXTENSIONS} @composer
 
 # Install dependencies
@@ -21,12 +21,10 @@ RUN apt-get update && \
 
 
 # Add NodeSource repository and install Node.js
-ARG NODE_VERSION=22
+ARG NODE_VERSION=24
 RUN curl -fsSL https://deb.nodesource.com/setup_$NODE_VERSION.x | bash - \
     && apt-get install -y nodejs \
-    && npm install -g npm@11.11.0 \
-    && npm install -g pnpm@latest-10 \
-    && npm install -g yarn \
+    && corepack enable \
     && npx playwright install-deps \
     && apt-get -y autoremove \
     && apt-get clean \
