@@ -15,7 +15,7 @@ RUN install-php-extensions ${PHP_EXTENSIONS} @composer
 
 # Install dependencies
 RUN apt-get update && \
-    apt-get install -y curl git mc htop sqlite3 postgresql-client && \
+    apt-get install -y curl sqlite3 postgresql-client && \
     apt-get -y autoremove && apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
@@ -27,14 +27,6 @@ RUN curl -fsSL https://deb.nodesource.com/setup_$NODE_VERSION.x | bash - \
     && corepack enable \
     && npx playwright install-deps \
     && apt-get -y autoremove \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
-# Install lefthook
-RUN curl -1sLf 'https://dl.cloudsmith.io/public/evilmartians/lefthook/setup.deb.sh' | bash \
-    && apt-get update \
-    && apt-get install -y lefthook \
-    && apt-get autoremove -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
