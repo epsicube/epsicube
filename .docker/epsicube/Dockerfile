@@ -31,7 +31,7 @@ RUN curl -fsSL https://deb.nodesource.com/setup_$NODE_VERSION.x | bash - \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 COPY php.ini $PHP_INI_DIR/conf.d/99-custom.ini
-RUN cp $PHP_INI_DIR/php.ini-development $PHP_INI_DIR/php.ini
+RUN cp $PHP_INI_DIR/php.ini-production $PHP_INI_DIR/php.ini
 
 
 ARG DOCKER_GID=999
