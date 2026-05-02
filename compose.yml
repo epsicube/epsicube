@@ -56,7 +56,7 @@ services:
       BACKUP_DIFF_RETENTION: '${BACKUP_DIFF_RETENTION:-31}'
       BACKUP_ARCHIVE_RETENTION: '${BACKUP_ARCHIVE_RETENTION:-31}'
     volumes:
-      - 'pgsql:/var/lib/postgresql/data'
+      - 'pgsql:/var/lib/postgresql'
       - 'backups:/var/lib/pgbackrest'
     networks:
       - epsicube
