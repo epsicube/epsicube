@@ -1,10 +1,12 @@
 <?php
 
-use Epsicube\Foundation\EpsicubeApplication;
+use Epsicube\Foundation\Actions\InjectEpsicube;
+use Illuminate\Foundation\Application;
+use Illuminate\Foundation\Bootstrap\LoadEnvironmentVariables;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 
-return EpsicubeApplication::configure(basePath: dirname(__DIR__))
+return tap(Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
         commands: __DIR__.'/../routes/console.php',
@@ -15,4 +17,6 @@ return EpsicubeApplication::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
-    })->create();
+    })->create(), function (Application $app) {
+        $app->beforeBootstrapping(LoadEnvironmentVariables::class, InjectEpsicube::configure(...));
+    });
