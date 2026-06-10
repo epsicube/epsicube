@@ -30,9 +30,8 @@ RUN curl -fsSL https://deb.nodesource.com/setup_$NODE_VERSION.x | bash - \
 ARG PHP_EXTENSIONS="bcmath curl intl mailparse mbstring opcache pcntl pdo_sqlite pdo_pgsql pgsql readline sockets xml zip"
 RUN install-php-extensions ${PHP_EXTENSIONS} @composer
 
-COPY php.ini $PHP_INI_DIR/conf.d/99-custom.ini
 RUN cp $PHP_INI_DIR/php.ini-production $PHP_INI_DIR/php.ini
-
+COPY php.ini $PHP_INI_DIR/conf.d/zz-custom.ini
 
 ARG DOCKER_GID=999
 ARG DOCKER_UID=999
