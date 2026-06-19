@@ -1,4 +1,4 @@
-FROM postgres:18.1-alpine3.23
+FROM postgres:18.4-alpine3.24
 
 RUN apk add --no-cache pgbackrest \
     && mkdir -p /var/lib/pgbackrest /var/log/pgbackrest /etc/pgbackrest /spool/pgbackrest \
