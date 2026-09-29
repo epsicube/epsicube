@@ -60,18 +60,41 @@ EOF
     fi
 }
 
+bootstrap_stanza() {
+    if pgbackrest --stanza=main info 2>/dev/null | grep -q "status: ok"; then
+        echo "Bootstrap: Stanza 'main' is OK"
+        return
+    fi
+
+    echo "Bootstrap: Stanza missing, starting PostgreSQL without archiving"
+    /usr/local/bin/docker-entrypoint.sh "$@" &
+    local pg_pid=$!
+
+    until pg_isready -q; do
+        kill -0 "$pg_pid" 2>/dev/null || { echo "Bootstrap: PostgreSQL exited unexpectedly"; exit 1; }
+        sleep 2
+    done
+
+    echo "Bootstrap: Running stanza-create..."
+
+    until pgbackrest --stanza=main stanza-create; do
+        kill -0 "$pg_pid" 2>/dev/null || { echo "Bootstrap: PostgreSQL exited unexpectedly"; exit 1; }
+        sleep 2
+    done
+
+    until pg_isready -q; do sleep 1; done
+
+    echo "Bootstrap: Stopping PostgreSQL (fast shutdown)"
+    kill -INT "$pg_pid"
+    wait "$pg_pid" || true
+    echo "Bootstrap: Done, restarting with archiving enabled"
+}
+
 initialize_pgbackrest_async() {
     (
         echo "Init: Waiting for PostgreSQL to be ready..."
         until pg_isready -q; do sleep 2; done
         echo "Init: PostgreSQL is ready"
-
-        if ! pgbackrest info | grep -q "status: ok"; then
-            echo "Init: Running stanza-create..."
-            pgbackrest --stanza=main stanza-create
-        else
-            echo "Init: Stanza 'main' is OK"
-        fi
 
         if ! pgbackrest --stanza=main info | grep -q "full"; then
             echo "Init: Starting bootstrap backup..."
@@ -98,9 +121,9 @@ if [ "${BACKUP_ENABLED:-false}" = "true" ]; then
     # Logic only for Postgres Server mode
     if [ "$1" = "postgres" ]; then
         echo "--- Mode: PostgreSQL Server with Backup ---"
+        bootstrap_stanza "$@"
         initialize_pgbackrest_async
         schedule_backups
-        supercronic "$CRON_TMP" &
 
         echo "Postgres: Injecting backup runtime arguments"
         set -- "$@" \
@@ -118,6 +141,7 @@ fi
 
 # Handover
 if [ "$1" = "postgres" ]; then
+    supercronic "$CRON_TMP" &
     exec /usr/local/bin/docker-entrypoint.sh "$@"
 else
     # Direct execution for restore, bash, or pgbackrest commands
