@@ -6,6 +6,12 @@ x-epsicube-common: &epsicube-common
     DB_USERNAME: ${DB_USERNAME:-postgres}
     DB_PASSWORD: ${DB_PASSWORD:-secret}
     SERVER_NAME: ${SERVER_NAME:-:80}
+
+    # Mercure
+    BROADCAST_CONNECTION: mercure
+    MERCURE_JWT_SECRET: ${MERCURE_JWT_SECRET:-ChangeThisSecretBeforeProductionSecureKey}
+    MERCURE_URL: http://web/.well-known/mercure
+    MERCURE_COOKIE_NAME: ${MERCURE_COOKIE_NAME:-mercure_access_token}
   volumes:
     - './:/app'
   networks:
