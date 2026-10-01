@@ -1,4 +1,26 @@
-FROM dunglas/frankenphp:1.12-php8.5-trixie AS base
+ARG FRANKENPHP_VERSION=1.12.7
+ARG PHP_VERSION=8.5
+
+#-------------------------------------------------------CUSTOM CADDY BUILD----------------------------------------------
+# FrankenPHP ships Mercure 0.x, the Laravel "mercure" driver speaks Mercure 1.0
+FROM dunglas/frankenphp:${FRANKENPHP_VERSION}-builder-php${PHP_VERSION}-trixie AS caddy-builder
+ARG MERCURE_VERSION=v1.0.2
+COPY --from=caddy:builder /usr/bin/xcaddy /usr/bin/xcaddy
+RUN GOTOOLCHAIN=auto \
+    CGO_ENABLED=1 \
+    XCADDY_SETCAP=1 \
+    XCADDY_GO_BUILD_FLAGS="-ldflags='-w -s' -tags=nobadger,nomysql,nopgx" \
+    CGO_CFLAGS="$(php-config --includes)" \
+    CGO_LDFLAGS="$(php-config --ldflags) $(php-config --libs)" \
+    xcaddy build \
+        --output /usr/local/bin/frankenphp \
+        --with github.com/dunglas/frankenphp=./ \
+        --with github.com/dunglas/frankenphp/caddy=./caddy/ \
+        --with github.com/dunglas/caddy-cbrotli \
+        --with github.com/dunglas/mercure=github.com/dunglas/mercure@${MERCURE_VERSION} \
+        --with github.com/dunglas/mercure/caddy@${MERCURE_VERSION}
+
+FROM dunglas/frankenphp:${FRANKENPHP_VERSION}-php${PHP_VERSION}-trixie AS base
 
 ENV TZ=UTC
 ENV DEBIAN_FRONTEND=noninteractive
@@ -74,11 +96,15 @@ RUN curl -fsSLO "$SUPERCRONIC_URL" \
 USER nonroot
 COPY --chown=nonroot:nonroot crontab /home/nonroot/crontab
 
+# Default: interactive shell, services override it with their own command
+CMD ["bash"]
+
 #-----------------------------------------------------------WEB------------------------------------------------------
 FROM base AS web
 ENV SERVER_NAME=":80"
 ENV SERVER_ROOT="/app/public"
 
+COPY --from=caddy-builder /usr/local/bin/frankenphp /usr/local/bin/frankenphp
 COPY Caddyfile /etc/caddy/Caddyfile
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=3s --retries=3 \
