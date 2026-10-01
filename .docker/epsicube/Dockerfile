@@ -11,7 +11,7 @@ RUN echo "Acquire::http::Pipeline-Depth 0;" > /etc/apt/apt.conf.d/99custom && \
 
 # Install dependencies
 RUN apt-get update && \
-    apt-get install -y curl sqlite3 postgresql-client && \
+    apt-get install -y curl sqlite3 postgresql-client procps && \
     apt-get -y autoremove && apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
@@ -57,11 +57,24 @@ ENV HOST="0.0.0.0"
 WORKDIR /app
 USER nonroot
 
-FROM base AS worker
-HEALTHCHECK --interval=30s --timeout=5s --start-period=3s --retries=3 \
-    CMD pgrep -f "artisan epsicube:work" || exit 1
-CMD ["php", "artisan", "epsicube:work"]
+#-----------------------------------------------------------CLI------------------------------------------------------
+FROM base AS cli
+USER root
+# Latest releases available at https://github.com/aptible/supercronic/releases
+ENV SUPERCRONIC_URL=https://github.com/aptible/supercronic/releases/download/v0.2.49/supercronic-linux-amd64 \
+    SUPERCRONIC_SHA1SUM=e63c11a9726b775a6a11801e81af4f3fb926aa68 \
+    SUPERCRONIC=supercronic-linux-amd64
 
+RUN curl -fsSLO "$SUPERCRONIC_URL" \
+ && echo "${SUPERCRONIC_SHA1SUM}  ${SUPERCRONIC}" | sha1sum -c - \
+ && chmod +x "$SUPERCRONIC" \
+ && mv "$SUPERCRONIC" "/usr/local/bin/${SUPERCRONIC}" \
+ && ln -s "/usr/local/bin/${SUPERCRONIC}" /usr/local/bin/supercronic
+
+USER nonroot
+COPY --chown=nonroot:nonroot crontab /home/nonroot/crontab
+
+#-----------------------------------------------------------WEB------------------------------------------------------
 FROM base AS web
 ENV SERVER_NAME=":80"
 ENV SERVER_ROOT="/app/public"

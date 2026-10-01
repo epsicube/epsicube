@@ -18,6 +18,13 @@ x-epsicube-build: &epsicube-build
     DOCKER_UID: '${DOCKER_UID:-999}'
     PHP_EXTENSIONS: '${PHP_EXTENSIONS:-bcmath curl intl mailparse mbstring opcache pcntl pdo_sqlite pdo_pgsql pgsql readline sockets xml zip}'
 
+x-epsicube-cli: &epsicube-cli
+  <<: *epsicube-common
+  restart: unless-stopped
+  build:
+    <<: *epsicube-build
+    target: cli
+
 services:
   web:
     <<: *epsicube-common
@@ -31,12 +38,36 @@ services:
       - "443:443/udp"
 
   worker:
-    <<: *epsicube-common
-    restart: unless-stopped
-    build:
-      <<: *epsicube-build
-      target: worker
+    <<: *epsicube-cli
     init: true
+    command: [ "php", "artisan", "epsicube:work" ]
+    healthcheck:
+      test: [ "CMD-SHELL", "pgrep -f 'artisan epsicube:work' || exit 1" ]
+      interval: 30s
+      timeout: 5s
+      start_period: 3s
+      retries: 3
+
+  queue:
+    <<: *epsicube-cli
+    command: [ "php", "artisan", "queue:work", "--tries=3", "--max-time=3600", "--sleep=3" ]
+    stop_grace_period: 60s
+    healthcheck:
+      test: [ "CMD-SHELL", "php artisan epsicube:queue-heartbeat --max-age=300 || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      start_period: 45s
+      retries: 3
+
+  schedule:
+    <<: *epsicube-cli
+    command: [ "supercronic", "/home/nonroot/crontab" ]
+    healthcheck:
+      test: [ "CMD-SHELL", "pgrep -x supercronic > /dev/null || exit 1" ]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
 
   pgsql:
     build:
@@ -67,7 +98,7 @@ services:
       retries: 10
       start_period: 2s
 
-  # DEV
+  #-----------------------------------------------------------DEV-------------------------------------------------------
   mailpit:
     profiles: [ 'dev' ]
     restart: unless-stopped
