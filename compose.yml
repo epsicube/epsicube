@@ -11,6 +11,8 @@ x-epsicube-common: &epsicube-common
     BROADCAST_CONNECTION: mercure
     MERCURE_JWT_SECRET: ${MERCURE_JWT_SECRET:-ChangeThisSecretBeforeProductionSecureKey}
     MERCURE_URL: http://web/.well-known/mercure
+    MERCURE_PUBLIC_URL: ${MERCURE_PUBLIC_URL:-http://localhost/.well-known/mercure}
+    MERCURE_TRUSTED_ISSUERS: ${APP_URL:-http://localhost}
     MERCURE_COOKIE_NAME: ${MERCURE_COOKIE_NAME:-mercure_access_token}
   volumes:
     - './:/app'

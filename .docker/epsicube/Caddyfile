@@ -26,10 +26,17 @@
 
                 # Uncomment the following lines to enable Mercure and Vulcain modules
                 mercure {
-                       publisher_jwt {env.MERCURE_JWT_SECRET} HS256
-                       subscriber_jwt {env.MERCURE_JWT_SECRET} HS256
+                       issuer {$MERCURE_TRUSTED_ISSUERS:http://localhost} {
+                              publisher {
+                                     jwt {env.MERCURE_JWT_SECRET} HS256
+                              }
+                              subscriber {
+                                     jwt {env.MERCURE_JWT_SECRET} HS256
+                              }
+                       }
+                       resource_identifier {$MERCURE_PUBLIC_URL:http://localhost/.well-known/mercure}
                        anonymous
-                       cookie_name {$MERCURE_COOKIE_NAME}
+                       cookie_name {$MERCURE_COOKIE_NAME:__Secure-mercure_access_token}
                        {$MERCURE_EXTRA_DIRECTIVES}
                 }
                 #vulcain
