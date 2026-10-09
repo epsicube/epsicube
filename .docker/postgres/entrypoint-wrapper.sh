@@ -30,6 +30,7 @@ handle_pgbackrest_conf() {
 [main]
 pg1-path=${PGDATA:-/var/lib/postgresql/data}
 pg1-port=5432
+pg1-user=${POSTGRES_USER:-postgres}
 
 [global]
 repo1-path=/var/lib/pgbackrest
@@ -70,7 +71,7 @@ bootstrap_stanza() {
     /usr/local/bin/docker-entrypoint.sh "$@" &
     local pg_pid=$!
 
-    until pg_isready -q; do
+    until pg_isready -U "${POSTGRES_USER:-postgres}" -q; do
         kill -0 "$pg_pid" 2>/dev/null || { echo "Bootstrap: PostgreSQL exited unexpectedly"; exit 1; }
         sleep 2
     done
@@ -82,7 +83,7 @@ bootstrap_stanza() {
         sleep 2
     done
 
-    until pg_isready -q; do sleep 1; done
+    until pg_isready -U "${POSTGRES_USER:-postgres}" -q; do sleep 1; done
 
     echo "Bootstrap: Stopping PostgreSQL (fast shutdown)"
     kill -INT "$pg_pid"
@@ -93,7 +94,7 @@ bootstrap_stanza() {
 initialize_pgbackrest_async() {
     (
         echo "Init: Waiting for PostgreSQL to be ready..."
-        until pg_isready -q; do sleep 2; done
+        until pg_isready -U "${POSTGRES_USER:-postgres}" -q; do sleep 2; done
         echo "Init: PostgreSQL is ready"
 
         if ! pgbackrest --stanza=main info | grep -q "full"; then
